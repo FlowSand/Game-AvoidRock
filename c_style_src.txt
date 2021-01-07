@@ -1,0 +1,474 @@
+//包含库文件
+#include <stdio.h>
+#include <graphics.h>
+#include <easyx.h>
+#include <conio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <windows.h>
+#pragma comment(lib,"Winmm.lib")
+//常量定义
+#define W     480	       //游戏操作界面部分
+#define H     480 
+#define M     640          //屏幕总大小
+#define N     480      
+#define UP 'w'             //方向
+#define DOWN 's'
+#define RIGHT 'd'
+#define LEFT 'a'
+//函数名声明
+void initmap();   //初始化地图
+void initGraph(); //游戏开始界面
+void init_copy(); // 复制图形
+void move_man(); //人物移动
+void move_box(); //箱子移动
+void judgement();//相遇判定
+void load_image();//读取图片
+void select();//选择难度
+//结构体定义 人和箱子
+typedef struct st
+{
+	int dx;
+	int dy;
+	int state;
+	int dir;
+};
+st man, box[20];
+//存放图像指针
+IMAGE img[13];
+//定义状态
+typedef enum { start, playing, over }game_state;
+game_state gs;
+int score = 0; // 分数
+int speed = 0; //速度
+/*初始化地图部分数组*/
+int map[15][15] = { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+{ 0, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 0 },
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },//4
+{ 0, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0 },
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+{ 0, 1, 1, 2, 1, 2, 1, 1, 1, 2, 1, 2, 1, 1, 0 },
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+{ 0, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0 },//9
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+{ 0, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 0 },
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+};
+int map1[15][15] = { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, },
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+{ 0, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 0 },
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },//4
+{ 0, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0 },
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+{ 0, 1, 1, 2, 1, 2, 1, 1, 1, 2, 1, 2, 1, 1, 0 },
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+{ 0, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0 },//9
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+{ 0, 1, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 1, 0 },
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 },
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
+};
+
+//游戏界面部分函数
+void initGraph()//开始界面和说明
+{
+	cleardevice();
+	setbkcolor(RGB(72, 12, 12));
+	putimage(0, 0, &img[11]);
+	Sleep(400);
+	char input;
+	input = _getch();
+	while (input != 13)
+		input = _getch();
+}
+//选择难度
+void select()
+{
+	cleardevice();
+	putimage(0, 0, &img[12]);                                           //加载图片
+	int a, key;
+	int keep = 1;
+	while (keep)
+	{
+		key = _getch();
+		if (key == 'a' || key == 'b' || key == 'c')
+		{
+			keep = 0;
+		}
+	}
+	switch (key)
+	{
+	case 'a':
+		a = 180; break;
+	case 'b':
+		a = 140; break;
+	case 'c':
+		a = 110; break;
+	}
+	speed = a;
+}
+//离开界面
+void init_leave()
+{
+	cleardevice();
+	putimage(0, 0, &img[9]);
+	mciSendString(_T("close all"), NULL, 0, NULL);
+	Sleep(2000);
+	closegraph();
+}
+//游戏获胜函数
+void init_win()
+{
+	cleardevice();
+	putimage(0, 0, &img[8]);             //加载获胜图片
+	mciSendString(_T("stop 13"), NULL, 0, NULL);
+
+
+	char key;
+	int keep = 1;
+	while (keep)
+	{
+		key = _getch();
+		if (key == 'n' || key == 'y')
+		{
+			keep = 0;
+		}
+	}
+	if (key == 'y')
+	{
+		gs = start;
+		score = 0;
+		cleardevice();
+		init_copy();
+		initmap();
+	}
+	else  init_leave();
+}
+//游戏失败
+void Gameover()//游戏结束函数   //未完成
+{
+	cleardevice();
+
+	putimage(0, 0, &img[7]);
+	char key;
+	int keep = 1;
+	while (keep)
+	{
+		key = _getch();
+		if (key == 'n' || key == 'y')
+		{
+			keep = 0;
+		}
+	}
+	if (key == 'y')
+	{
+		gs = start;
+		cleardevice();
+		score = 0;
+		init_copy();
+		initmap();
+	}
+	else  init_leave();
+}
+//游戏暂停                                                               //待删除
+void stop()
+{
+	char key = 'a';
+	setcolor(RED);
+	settextstyle(28, 0, _T("宋体"));
+	outtextxy(480, 50, _T("游戏暂停中"));
+	Sleep(100);
+	while (key != ' ')
+	{
+		key = _getch();
+		setcolor(RGB(72, 12, 12));
+		outtextxy(480, 50, _T("游戏暂停中"));
+	}
+}
+//积分措施  //待改动
+void init_score()                                                             //    待修正
+{
+	setbkcolor(WHITE);
+	TCHAR input[10];
+	_stprintf_s(input, _T("%d"), score);
+	setcolor(BLUE);
+	settextstyle(30, 0, _T("宋体"));
+	outtextxy(550, 300, input);
+
+}
+void init_copy()                         //图形复制
+{
+	for (int i = 0; i < 15; i++)
+	for (int j = 0; j < 20; j++)
+		map[i][j] = map1[i][j];
+}
+
+void load_image()//读取图片
+{
+	loadimage(&img[0], _T(".\\res\\0.jpg"));//存边界
+	loadimage(&img[1], _T(".\\res\\1.jpg"));//存空地
+	loadimage(&img[2], _T(".\\res\\2.jpg"));//存箱子
+	loadimage(&img[3], _T(".\\res\\3.jpg"));//存人物 上下左右
+	loadimage(&img[4], _T(".\\res\\3.jpg"));
+	loadimage(&img[5], _T(".\\res\\5.jpg"));
+	loadimage(&img[6], _T(".\\res\\6.jpg"));
+	loadimage(&img[7], _T(".\\res\\7.jpg"));//存失败图像
+	loadimage(&img[8], _T(".\\res\\0.jpg"));//存储获胜图像
+	loadimage(&img[9], _T(".\\res\\9.jpg"));//存储离开图像
+	loadimage(&img[10], _T(".\\res\\10.jpg"));//存储计分板框架
+	loadimage(&img[11], _T(".\\res\\11.jpg"));//游戏开始界面
+	loadimage(&img[12], _T(".\\res\\12.jpg")); //选关
+}
+void initmap()//初始化地图
+{
+	cleardevice();
+	setbkcolor(RGB(72, 12, 12));
+
+	man.dx = 7;//初始化人的状态
+	man.dy = 7;
+	man.state = 1;
+	man.dir = 2;
+	for (int a = 0; a < 20; a++) //箱子状态初始
+	{
+		box[a].state = 0;
+	}
+	int score = 0;
+	box[1].dx = 5; box[1].dy = 7; box[0].dx = 11; box[0].dy = 9;
+	box[2].dx = 7; box[2].dy = 5; box[3].dx = 11; box[3].dy = 7;
+	box[4].dx = 7; box[4].dy = 9; box[5].dx = 11; box[5].dy = 5;
+	box[6].dx = 9; box[6].dy = 7; box[7].dx = 11; box[7].dy = 3;
+	box[8].dx = 3; box[8].dy = 9; box[9].dx = 9; box[9].dy = 3;
+	box[10].dx = 3; box[10].dy = 11; box[11].dx = 7; box[11].dy = 3;
+	box[13].dx = 5; box[13].dy = 11; box[12].dx = 5; box[12].dy = 3;
+	box[14].dx = 7; box[14].dy = 11; box[15].dx = 3; box[15].dy = 3;
+	box[17].dx = 9; box[17].dy = 11; box[16].dx = 3; box[16].dy = 5;
+	box[18].dx = 11; box[18].dy = 11; box[19].dx = 3; box[19].dy = 7;
+
+	int i, j;
+	for (i = 0; i < 15; i++)
+	{
+		for (j = 0; j < 15; j++)
+		{
+			putimage(i * 32, j * 32, &img[map[j][i]]);
+		}
+	}
+	putimage(man.dx * 32, man.dy * 32, &img[3]);
+	putimage(480, 0, &img[10]);
+
+	//加载一个积分边框
+}
+//移动函数(x1,y1为移动方向)
+void move_man(int x1, int y1, int t)//角色移动 //改动
+{
+	int fx, fy, x, y, dir;//x,y为现在的位置，fx,fy为要存放的位置,dir为方向
+	fx = 0; fy = 0;
+	x = man.dx;
+	y = man.dy;
+	dir = t;
+	man.dir = t;
+
+	fx = x + x1;
+	fy = y + y1;
+
+	if (fx >= 1 && fx <= 13 && fy <= 13 && fy >= 1)//判断要移动的位置是否在允许的范围
+	{
+		if (map[fx][fy] == 1)
+		{
+			switch (dir)
+			{
+			case 1:
+				putimage(fx * 32, fy * 32, &img[3]); break;
+			case 2:
+				putimage(fx * 32, fy * 32, &img[4]); break;
+			case 3:
+				putimage(fx * 32, fy * 32, &img[5]); break;
+			case 4:
+				putimage(fx * 32, fy * 32, &img[6]); break;
+			}
+		}
+		else if (map[fx][fy] == 2)    //判断推箱子
+		{
+			map[fx][fy] = 1;
+			score += 1;  
+			mciSendString(_T("play 15 from 0"), NULL, 0, NULL);//积分
+			for (int i = 0; i < 20; i++)
+			{
+				if (box[i].dx == fx && box[i].dy == fy)
+				{
+					box[i].state = 1;
+					switch (man.dir)
+					{
+					case 1:
+						box[i].dir = man.dir; box[i].dy = fy - 1;
+						putimage(fx * 32, fy * 32, &img[3]);
+						break;
+					case 2:
+						box[i].dir = man.dir; box[i].dy = fy + 1;
+						putimage(fx * 32, fy * 32, &img[4]);
+						break;
+					case 3:
+						box[i].dir = man.dir; box[i].dx = fx - 1;
+						putimage(fx * 32, fy * 32, &img[5]);
+						break;
+					case 4:
+						box[i].dir = man.dir; box[i].dx = fx + 1;
+						putimage(fx * 32, fy * 32, &img[6]);
+						break;
+					}
+				}
+			}
+		}
+		putimage(man.dx * 32, man.dy * 32, &img[1]);
+		man.dx = fx;
+		man.dy = fy;
+	}
+}
+//箱子移动函数
+void move_box()
+{
+	int i, fx, fy;
+	i = 0; fx = 0; fy = 0;
+	for (i = 0; i < 20; i++)
+	{
+		if (box[i].state == 1)
+		{
+			switch (box[i].dir)
+			{
+			case 1:
+				fy = box[i].dy - 1; fx = box[i].dx; break;
+			case 2:
+				fy = box[i].dy + 1; fx = box[i].dx; break;
+			case 3:
+				fx = box[i].dx - 1; fy = box[i].dy; break;
+			case 4:
+				fx = box[i].dx + 1; fy = box[i].dy; break;
+			}
+			if (fx == 0 || fx == 14 || fy == 0 || fy == 14) // 碰墙判定
+			{
+				srand((unsigned)time(NULL));
+				int c;
+				c = rand() % 2;
+				if (c)
+				{
+					switch (box[i].dir)
+					{
+					case 1:
+						fy = 13; fx = box[i].dx; break;
+					case 2:
+						fy = 1; fx = box[i].dx; break;
+					case 3:
+						fx = 13; fy = box[i].dy; break;
+					case 4:
+						fx = 1; fy = box[i].dy; break;
+					}
+
+				}
+				else
+				{
+					switch (box[i].dir)
+					{
+					case 1:
+						fy = 2; fx = box[i].dx; box[i].dir = 2; break;
+					case 2:
+						fy = 12; fx = box[i].dx; box[i].dir = 1; break;
+					case 3:
+						fx = 2; fy = box[i].dy; box[i].dir = 4; break;
+					case 4:
+						fx = 12; fy = box[i].dy; box[i].dir = 3; break;
+					}
+				}
+			}
+			if (map[box[i].dx][box[i].dy] == 2)
+			{
+				
+				putimage(fx * 32, fy * 32, &img[2]);
+			}
+			else{
+				putimage((box[i].dx) * 32, (box[i].dy) * 32, &img[1]);
+				putimage(fx * 32, fy * 32, &img[2]);
+			}
+			box[i].dx = fx; box[i].dy = fy;
+		}
+	}
+	Sleep(speed);
+}
+
+//游戏失败判定
+void judgemeet()
+{
+	for (int i = 0; i < 20; i++)
+	{
+		if (box[i].state == 1 && box[i].dx == man.dx && box[i].dy == man.dy)
+		{
+			mciSendString(_T("stop 13"), NULL, 0, NULL);
+			mciSendString(_T("play 14"), NULL, 0, NULL);
+			Gameover();
+
+		}
+	}
+	if (score == 20)
+	{
+		init_win();
+	}
+}
+
+//游戏循环过程
+void play()
+{
+	setbkcolor(RGB(72, 12, 12));
+	char key;
+	gs = playing;
+	while (gs == playing)
+	{
+		move_box();
+		judgemeet();
+
+		srand((unsigned)time(NULL));
+		if (_kbhit())
+		{
+			key = _getch();
+			switch (key)  //调用move_man函数
+			{
+			case UP:
+				move_man(0, -1, 1);    break;
+			case DOWN:
+				move_man(0, 1, 2);     break;
+			case LEFT:
+				move_man(-1, 0, 3);    break;
+			case RIGHT:
+				move_man(1, 0, 4);     break;
+			case 27:
+				init_leave();          break;
+			default:                   break;
+			}
+		}
+		init_score();
+	}
+}
+//主函数
+void main(){
+
+
+	gs = start;
+	initgraph(M, N);
+	load_image();
+	initGraph();    //开始游戏
+	select();
+	while (gs == start)
+	{
+
+		initmap();
+		mciSendString(_T("open 13.mp3 alias 13"), NULL, 0, NULL);
+		mciSendString(_T("open 14.mp3 alias 14"), NULL, 0, NULL);
+		mciSendString(_T("open 15.mp3 alias 15"), NULL, 0, NULL);
+		mciSendString(_T("play 13"), NULL, 0, NULL);
+		play();
+	}
+	closegraph();
+}

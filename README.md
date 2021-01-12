@@ -1,4 +1,5 @@
 # AvoidRock-Game
+大一初学C语言练手项目，使用EasyX图形库，用来简单学习下游戏程序的核心循环机制  
 
-大一初学C语言练手项目，使用EasyX图形库，也可以用来简单学习下游戏程序的核心循环机制  
-玩法灵感产生于推箱子，比较考验反应能力（因为比较菜，源程序存在移动闪烁问题增加了难度）
+### 运行示意图
+![demo](https://github.com/OneSummerDay/AvoidRock-Game/blob/main/demo.gif)

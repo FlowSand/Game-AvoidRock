@@ -1,4 +1,4 @@
-# AvoidRock-Game
+# Game-AvoidRock
 大一初学C语言练手项目，使用EasyX图形库，用来简单学习下游戏程序的核心循环机制  
 
 ### 运行示意图
